@@ -2,7 +2,6 @@ import pytest
 from pycomm3 import LogixDriver
 import os
 
-
 SLOT = int(os.environ['slot'])
 IP_ADDR = os.environ['ip']
 

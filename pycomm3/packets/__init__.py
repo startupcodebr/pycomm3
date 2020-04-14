@@ -2,6 +2,7 @@
 #
 # const.py - A set of structures and constants used to implement the Ethernet/IP protocol
 #
+# Copyright (c) 2020 Startup Code <suporte@startupcode.com.br>
 # Copyright (c) 2019 Ian Ottoway <ian@ottoway.dev>
 # Copyright (c) 2014 Agostino Ruscito <ruscito@gmail.com>
 #
@@ -32,29 +33,32 @@ class Packet:
     ...
 
 
-from .responses import (ResponsePacket, SendUnitDataResponsePacket, SendRRDataResponsePacket, ListIdentityResponsePacket,
-                        RegisterSessionResponsePacket, UnRegisterSessionResponsePacket, ReadTagServiceResponsePacket,
-                        MultiServiceResponsePacket, ReadTagFragmentedServiceResponsePacket,
-                        WriteTagServiceResponsePacket, WriteTagFragmentedServiceResponsePacket)
+from .responses import (
+    ResponsePacket, SendUnitDataResponsePacket, SendRRDataResponsePacket,
+    ListIdentityResponsePacket, RegisterSessionResponsePacket,
+    UnRegisterSessionResponsePacket, ReadTagServiceResponsePacket,
+    MultiServiceResponsePacket, ReadTagFragmentedServiceResponsePacket,
+    WriteTagServiceResponsePacket, WriteTagFragmentedServiceResponsePacket)
 
-from .requests import (RequestPacket, SendUnitDataRequestPacket, SendRRDataRequestPacket, ListIdentityRequestPacket,
-                       RegisterSessionRequestPacket, UnRegisterSessionRequestPacket, ReadTagServiceRequestPacket,
-                       MultiServiceRequestPacket, ReadTagFragmentedServiceRequestPacket, WriteTagServiceRequestPacket,
-                       WriteTagFragmentedServiceRequestPacket)
+from .requests import (
+    RequestPacket, SendUnitDataRequestPacket, SendRRDataRequestPacket,
+    ListIdentityRequestPacket, RegisterSessionRequestPacket,
+    UnRegisterSessionRequestPacket, ReadTagServiceRequestPacket,
+    MultiServiceRequestPacket, ReadTagFragmentedServiceRequestPacket,
+    WriteTagServiceRequestPacket, WriteTagFragmentedServiceRequestPacket)
 
 from collections import defaultdict
 
-
-REQUEST_MAP = defaultdict(RequestPacket,
-{
-    'send_unit_data': SendUnitDataRequestPacket,
-    'send_rr_data': SendRRDataRequestPacket,
-    'register_session': RegisterSessionRequestPacket,
-    'unregister_session': UnRegisterSessionRequestPacket,
-    'list_identity': ListIdentityRequestPacket,
-    'read_tag': ReadTagServiceRequestPacket,
-    'multi_request': MultiServiceRequestPacket,
-    'read_tag_fragmented': ReadTagFragmentedServiceRequestPacket,
-    'write_tag': WriteTagServiceRequestPacket,
-    'write_tag_fragmented': WriteTagFragmentedServiceRequestPacket,
-})
+REQUEST_MAP = defaultdict(
+    RequestPacket, {
+        'send_unit_data': SendUnitDataRequestPacket,
+        'send_rr_data': SendRRDataRequestPacket,
+        'register_session': RegisterSessionRequestPacket,
+        'unregister_session': UnRegisterSessionRequestPacket,
+        'list_identity': ListIdentityRequestPacket,
+        'read_tag': ReadTagServiceRequestPacket,
+        'multi_request': MultiServiceRequestPacket,
+        'read_tag_fragmented': ReadTagFragmentedServiceRequestPacket,
+        'write_tag': WriteTagServiceRequestPacket,
+        'write_tag_fragmented': WriteTagFragmentedServiceRequestPacket,
+    })

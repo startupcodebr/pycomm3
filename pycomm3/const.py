@@ -2,6 +2,7 @@
 #
 # const.py - A set of structures and constants used to implement the Ethernet/IP protocol
 #
+# Copyright (c) 2020 Startup Code <suporte@startupcode.com.br>
 # Copyright (c) 2019 Ian Ottoway <ian@ottoway.dev>
 # Copyright (c) 2014 Agostino Ruscito <ruscito@gmail.com>
 #
@@ -25,7 +26,6 @@
 #
 
 from .bytes_ import unpack_usint, unpack_dint, unpack_uint
-
 
 HEADER_SIZE = 24
 
@@ -64,11 +64,7 @@ BASE_TAG_BIT = 1 << 26
 TEMPLATE_MEMBER_INFO_LEN = 8  # 2B bit/array len, 2B datatype, 4B offset
 STRUCTURE_READ_REPLY = b'\xa0\x02'
 
-ELEMENT_ID = {
-    "8-bit": b'\x28',
-    "16-bit": b'\x29',
-    "32-bit": b'\x2a'
-}
+ELEMENT_ID = {"8-bit": b'\x28', "16-bit": b'\x29', "32-bit": b'\x2a'}
 
 CLASS_ID = {
     "8-bit": b'\x20',
@@ -108,7 +104,6 @@ ENCAPSULATION_COMMAND = {  # Volume 2: 2-3.2 Command Field UINT 2 byte
     "send_rr_data": b'\x6F\x00',
     "send_unit_data": b'\x70\x00'
 }
-
 """
 When a tag is created, an instance of the Symbol Object (Class ID 0x6B) is created
 inside the controller.
@@ -168,21 +163,19 @@ _TAG_SERVICES_REPLY = {
     0x83: "Get Attributes",
 }
 
-TAG_SERVICES_REPLY = {**_TAG_SERVICES_REPLY, **{v: k for k, v in _TAG_SERVICES_REPLY.items()}}
-
-
-MULTI_PACKET_SERVICES = (
-    TAG_SERVICES_REPLY['Multiple Service Packet'],
-    TAG_SERVICES_REPLY['Read Tag Fragmented'],
-    TAG_SERVICES_REPLY['Write Tag Fragmented'],
-    TAG_SERVICES_REPLY['Get Instance Attributes List'],
-    TAG_SERVICES_REPLY['Get Attributes']
-)
-
-DATA_ITEM = {
-    'Connected': b'\xb1\x00',
-    'Unconnected': b'\xb2\x00'
+TAG_SERVICES_REPLY = {
+    **_TAG_SERVICES_REPLY,
+    **{v: k
+       for k, v in list(_TAG_SERVICES_REPLY.items())}
 }
+
+MULTI_PACKET_SERVICES = (TAG_SERVICES_REPLY['Multiple Service Packet'],
+                         TAG_SERVICES_REPLY['Read Tag Fragmented'],
+                         TAG_SERVICES_REPLY['Write Tag Fragmented'],
+                         TAG_SERVICES_REPLY['Get Instance Attributes List'],
+                         TAG_SERVICES_REPLY['Get Attributes'])
+
+DATA_ITEM = {'Connected': b'\xb1\x00', 'Unconnected': b'\xb2\x00'}
 
 ADDRESS_ITEM = {
     'Connection Based': b'\xa1\x00',
@@ -210,7 +203,6 @@ CONNECTION_PARAMETER = {
     'DHP': 0x4302,
     'Default': 0x43f8,
 }
-
 """
 Atomic Data Type:
 
@@ -276,14 +268,15 @@ _DATA_TYPES = {
     'LTIME': 0xd7,  # Duration long
     'ITIME': 0xd8,  # Duration short
     'STRINGN': 0xd9,  # character string (n byte per character)
-    'SHORT_STRING': 0xda,  # character string (1 byte per character, 1 byte length indicator)
+    'SHORT_STRING':
+    0xda,  # character string (1 byte per character, 1 byte length indicator)
     'TIME': 0xdb,  # Duration in milliseconds
     'EPATH': 0xdc,  # CIP Path segment
     'ENGUNIT': 0xdd,  # Engineering Units
     'STRINGI': 0xde  # International character string
 }
 
-DATA_TYPE = {**_DATA_TYPES, **{v: k for k, v in _DATA_TYPES.items()}}
+DATA_TYPE = {**_DATA_TYPES, **{v: k for k, v in list(_DATA_TYPES.items())}}
 
 REPLY_INFO = {
     0x4e: 'FORWARD_CLOSE (4E,00)',
@@ -300,14 +293,12 @@ REPLY_INFO = {
     0x66: 'unregister_session',
 }
 
-
 EXTERNAL_ACCESS = {
     0: 'Full Access',
     1: 'Reserved',
     2: 'Read Only',
     3: 'No Access',
 }
-
 
 # States defined in CIP Spec Vol 1, chapter 5, Identity Object
 STATES = {
@@ -317,9 +308,8 @@ STATES = {
     3: 'Operational',
     4: 'Major Recoverable Fault',
     5: 'Major Unrecoverable Fault',
-    **{i: 'Reserved' for i in range(6, 255)},
-    255: 'Default for Get_Attributes_All service'
-
+    **{i: 'Reserved'
+       for i in range(6, 255)}, 255: 'Default for Get_Attributes_All service'
 }
 
 # From Rockwell KB Article #28917
@@ -337,8 +327,6 @@ KEYSWITCH = {
         49: 'REMOTE PROG'
     }
 }
-
-
 """
 EtherNet/IP Encapsulation Error Codes
 
@@ -346,14 +334,15 @@ Standard CIP Encapsulation Error returned in the cip message header
 """
 STATUS = {
     0x0000: "Success",
-    0x0001: "The sender issued an invalid or unsupported encapsulation command",
+    0x0001:
+    "The sender issued an invalid or unsupported encapsulation command",
     0x0002: "Insufficient memory",
     0x0003: "Poorly formed or incorrect data in the data portion",
-    0x0064: "An originator used an invalid session handle when sending an encapsulation message to the target",
+    0x0064:
+    "An originator used an invalid session handle when sending an encapsulation message to the target",
     0x0065: "The target received a message of invalid length",
     0x0069: "Unsupported Protocol Version"
 }
-
 """
 MSG Error Codes:
 
@@ -363,13 +352,14 @@ Rockwell Automation Publication
 1756-RM003P-EN-P - December 2014
 """
 
-
 SERVICE_STATUS = {
     0x01: "Connection failure (see extended status)",
     0x02: "Insufficient resource",
     0x03: "Invalid value",
-    0x04: "IOI syntax error. A syntax error was detected decoding the Request Path (see extended status)",
-    0x05: "Destination unknown, class unsupported, instance undefined or structure element undefined (see extended status)",
+    0x04:
+    "IOI syntax error. A syntax error was detected decoding the Request Path (see extended status)",
+    0x05:
+    "Destination unknown, class unsupported, instance undefined or structure element undefined (see extended status)",
     0x06: "Insufficient Packet Space",
     0x07: "Connection lost",
     0x08: "Service not supported",
@@ -465,7 +455,8 @@ EXTEND_CODES = {
         0x2104: "Address out of range",
         0x2105: "Access beyond end of the object",
         0x2106: "Data in use",
-        0x2107: "Tag type used in request does not match the target tag's data type",
+        0x2107:
+        "Tag type used in request does not match the target tag's data type",
         0x2108: "Controller in upload or download mode",
         0x2109: "Attempt to change number of array dimensions",
         0x210A: "Invalid symbol name",
@@ -477,7 +468,6 @@ EXTEND_CODES = {
         0x2112: "Shared routine not editable",
         0x2113: "Controller in faulted mode",
         0x2114: "Run mode inhibited"
-
     }
 }
 
@@ -525,7 +515,6 @@ PCCC_DATA_TYPE = {
     'I': b'\x8c'
 }
 
-
 PCCC_DATA_SIZE = {
     'N': 2,
     # 'L': 4,
@@ -541,7 +530,6 @@ PCCC_DATA_SIZE = {
     'I': 2
 }
 
-
 PCCC_CT = {
     'PRE': 1,
     'ACC': 2,
@@ -555,7 +543,6 @@ PCCC_CT = {
     'UA': 10
 }
 
-
 PCCC_ERROR_CODE = {
     -2: "Not Acknowledged (NAK)",
     -3: "No Reponse, Check COM Settings",
@@ -565,7 +552,8 @@ PCCC_ERROR_CODE = {
     -7: "No data specified to data link layer",
     -8: "No data returned from PLC",
     -20: "No Data Returned",
-    16: "Illegal Command or Format, Address may not exist or not enough elements in data file",
+    16:
+    "Illegal Command or Format, Address may not exist or not enough elements in data file",
     32: "PLC Has a Problem and Will Not Communicate",
     48: "Remote Node Host is Missing, Disconnected, or Shut Down",
     64: "Host Could Not Complete Function Due To Hardware Fault",
@@ -576,7 +564,6 @@ PCCC_ERROR_CODE = {
     144: "Remote node cannot buffer command",
     240: "Error code in EXT STS Byte"
 }
-
 
 #  Taken from PyLogix
 # List originally came from Wireshark /epan/dissectors/packet-cip.c
@@ -1074,7 +1061,8 @@ VENDORS = {
     449: 'Embedded System Products, Inc.',
     450: 'Reserved',
     451: 'Mencom Corporation',
-    452: 'Reserved',453: 'Matsushita Welding Systems Co., Ltd.',
+    452: 'Reserved',
+    453: 'Matsushita Welding Systems Co., Ltd.',
     454: 'Dengensha Mfg. Co. Ltd.',
     455: 'Quinn Systems Ltd.',
     456: 'Tellima Technology Ltd',

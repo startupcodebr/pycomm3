@@ -19,7 +19,6 @@ atomic_tests = [  # (tag name, data type, value)
     ('INT_ARY2[1]{5}', 'INT[5]', [255, 254, 253, 252, 251]),
     ('STRING_ARY2[0]{5}', 'STRING[5]', 'A B C D E'.split()),
 
-
     # bits of integers
     ('DINT3.0', 'BOOL', True),
     ('DINT3.31', 'BOOL', True),

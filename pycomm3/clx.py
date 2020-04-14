@@ -2,6 +2,7 @@
 #
 # const.py - A set of structures and constants used to implement the Ethernet/IP protocol
 #
+# Copyright (c) 2020 Startup Code <suporte@startupcode.com.br>
 # Copyright (c) 2019 Ian Ottoway <ian@ottoway.dev>
 # Copyright (c) 2014 Agostino Ruscito <ruscito@gmail.com>
 #
@@ -33,21 +34,26 @@ from autologging import logged
 
 from . import DataError, Tag, RequestError
 from .base import Base
-from .bytes_ import (pack_dint, pack_uint, pack_udint, pack_usint, unpack_usint, unpack_uint, unpack_dint, unpack_udint,
-                     pack_sint, UNPACK_DATA_FUNCTION, PACK_DATA_FUNCTION, DATA_FUNCTION_SIZE)
-from .const import (SUCCESS, EXTENDED_SYMBOL, ENCAPSULATION_COMMAND, DATA_TYPE, BITS_PER_INT_TYPE,
-                    REPLY_INFO, TAG_SERVICES_REQUEST, PADDING_BYTE, ELEMENT_ID, DATA_ITEM, ADDRESS_ITEM,
-                    CLASS_ID, CLASS_CODE, INSTANCE_ID, INSUFFICIENT_PACKETS, REPLY_START, BASE_TAG_BIT,
-                    MULTISERVICE_READ_OVERHEAD, MULTISERVICE_WRITE_OVERHEAD, MIN_VER_INSTANCE_IDS, REQUEST_PATH_SIZE,
-                    VENDORS, PRODUCT_TYPES, KEYSWITCH, TAG_SERVICES_REPLY, get_service_status, get_extended_status,
-                    TEMPLATE_MEMBER_INFO_LEN, EXTERNAL_ACCESS, DATA_TYPE_SIZE)
+from .bytes_ import (pack_dint, pack_uint, pack_udint, pack_usint,
+                     unpack_usint, unpack_uint, unpack_dint, unpack_udint,
+                     pack_sint, UNPACK_DATA_FUNCTION, PACK_DATA_FUNCTION,
+                     DATA_FUNCTION_SIZE)
+from .const import (SUCCESS, EXTENDED_SYMBOL, ENCAPSULATION_COMMAND, DATA_TYPE,
+                    BITS_PER_INT_TYPE, REPLY_INFO, TAG_SERVICES_REQUEST,
+                    PADDING_BYTE, ELEMENT_ID, DATA_ITEM, ADDRESS_ITEM,
+                    CLASS_ID, CLASS_CODE, INSTANCE_ID, INSUFFICIENT_PACKETS,
+                    REPLY_START, BASE_TAG_BIT, MULTISERVICE_READ_OVERHEAD,
+                    MULTISERVICE_WRITE_OVERHEAD, MIN_VER_INSTANCE_IDS,
+                    REQUEST_PATH_SIZE, VENDORS, PRODUCT_TYPES, KEYSWITCH,
+                    TAG_SERVICES_REPLY, get_service_status,
+                    get_extended_status, TEMPLATE_MEMBER_INFO_LEN,
+                    EXTERNAL_ACCESS, DATA_TYPE_SIZE)
 
 # re_bit = re.compile(r'(?P<base>^.*)\.(?P<bit>([0-2][0-9])|(3[01])|[0-9])$')
 
 
 def with_forward_open(func):
     """Decorator to ensure a forward open request has been completed with the plc"""
-
     def forward_open_decorator(self, *args, **kwargs):
         if not self.forward_open():
             msg = f'Target did not connected. {func.__name__} will not be executed.'
@@ -72,9 +78,15 @@ class LogixDriver(Base):
         - Read Modify Write Tag (0xce)
 
 """
-
-    def __init__(self, ip_address: str, *args, slot: int = 0, large_packets: bool = True,
-                 init_info: bool = True, init_tags: bool = True, init_program_tags: bool = False, **kwargs):
+    def __init__(self,
+                 ip_address: str,
+                 *args,
+                 slot: int = 0,
+                 large_packets: bool = True,
+                 init_info: bool = True,
+                 init_tags: bool = True,
+                 init_program_tags: bool = False,
+                 **kwargs):
         """
         :param ip_address: IP address of PLC
         :param slot: Slot of PLC in chassis (leave at 0 for CompactLogix)
@@ -100,7 +112,8 @@ class LogixDriver(Base):
             self.open()
             if init_info:
                 self.get_plc_info()
-                self.use_instance_ids = self.info.get('version_major', 0) >= MIN_VER_INSTANCE_IDS
+                self.use_instance_ids = self.info.get(
+                    'version_major', 0) >= MIN_VER_INSTANCE_IDS
                 self.get_plc_name()
 
             if init_tags:
@@ -139,7 +152,9 @@ class LogixDriver(Base):
                 self._info['name'] = _parse_plc_name(response)
                 return self._info['name']
             else:
-                raise DataError(f'send_unit_data did not return valid data - {response.error}')
+                raise DataError(
+                    f'send_unit_data did not return valid data - {response.error}'
+                )
 
         except Exception as err:
             raise DataError(err)
@@ -180,13 +195,17 @@ class LogixDriver(Base):
                 self._info = {**self._info, **info}
                 return info
             else:
-                raise DataError(f'send_unit_data did not return valid data - {response.error}')
+                raise DataError(
+                    f'send_unit_data did not return valid data - {response.error}'
+                )
 
         except Exception as err:
             raise DataError(err)
 
     @with_forward_open
-    def get_tag_list(self, program: str = None, cache: bool = True) -> List[dict]:
+    def get_tag_list(self,
+                     program: str = None,
+                     cache: bool = True) -> List[dict]:
         """
         Returns the list of tags from the controller. For only controller-scoped tags, set `program` to None (default).
         Set `program` to a program name to only get the program scoped tags from the specified program.
@@ -226,7 +245,8 @@ class LogixDriver(Base):
         user_tags = self._isolating_user_tag(all_tags, program)
         for tag in user_tags:
             if tag['tag_type'] == 'struct':
-                tag['data_type'] = self._get_data_type(tag['template_instance_id'])
+                tag['data_type'] = self._get_data_type(
+                    tag['template_instance_id'])
 
         return user_tags
 
@@ -245,15 +265,21 @@ class LogixDriver(Base):
                 if program:
                     if not program.startswith('Program:'):
                         program = f'Program:{program}'
-                    path = [EXTENDED_SYMBOL, pack_usint(len(program)), program.encode('utf-8')]
+                    path = [
+                        EXTENDED_SYMBOL,
+                        pack_usint(len(program)),
+                        program.encode('utf-8')
+                    ]
                     if len(program) % 2:
                         path.append(b'\x00')
 
                 path += [
                     # Request Path ( 20 6B 25 00 Instance )
                     CLASS_ID["8-bit"],  # Class id = 20 from spec 0x20
-                    CLASS_CODE["Symbol Object"],  # Logical segment: Symbolic Object 0x6B
-                    INSTANCE_ID["16-bit"],  # Instance Segment: 16 Bit instance 0x25
+                    CLASS_CODE[
+                        "Symbol Object"],  # Logical segment: Symbolic Object 0x6B
+                    INSTANCE_ID[
+                        "16-bit"],  # Instance Segment: 16 Bit instance 0x25
                     b'\x00',
                     pack_uint(last_instance),  # The instance
                 ]
@@ -261,7 +287,9 @@ class LogixDriver(Base):
                 path_size = pack_usint(len(path) // 2)
                 request = self.new_request('send_unit_data')
                 request.add(
-                    bytes([TAG_SERVICES_REQUEST['Get Instance Attributes List']]),
+                    bytes([
+                        TAG_SERVICES_REQUEST['Get Instance Attributes List']
+                    ]),
                     path_size,
                     path,
                     # Request Data
@@ -276,9 +304,12 @@ class LogixDriver(Base):
                 )
                 response = request.send()
                 if not response:
-                    raise DataError(f"send_unit_data returned not valid data - {response.error}")
+                    raise DataError(
+                        f"send_unit_data returned not valid data - {response.error}"
+                    )
 
-                last_instance = self._parse_instance_attribute_list(response, tag_list)
+                last_instance = self._parse_instance_attribute_list(
+                    response, tag_list)
             return tag_list
 
         except Exception as e:
@@ -303,7 +334,8 @@ class LogixDriver(Base):
                 count += 1
                 symbol_address = unpack_udint(tags_returned[idx:idx + 4])
                 idx += 4
-                symbol_object_address = unpack_udint(tags_returned[idx:idx + 4])
+                symbol_object_address = unpack_udint(tags_returned[idx:idx +
+                                                                   4])
                 idx += 4
                 software_control = unpack_udint(tags_returned[idx:idx + 4])
                 idx += 4
@@ -316,14 +348,23 @@ class LogixDriver(Base):
                 dim3 = unpack_udint(tags_returned[idx:idx + 4])
                 idx += 4
 
-                tag_list.append({'instance_id': instance,
-                                 'tag_name': tag_name,
-                                 'symbol_type': symbol_type,
-                                 'symbol_address': symbol_address,
-                                 'symbol_object_address': symbol_object_address,
-                                 'software_control': software_control,
-                                 'external_access': EXTERNAL_ACCESS.get(access, 'Unknown'),
-                                 'dimensions': [dim1, dim2, dim3]})
+                tag_list.append({
+                    'instance_id':
+                    instance,
+                    'tag_name':
+                    tag_name,
+                    'symbol_type':
+                    symbol_type,
+                    'symbol_address':
+                    symbol_address,
+                    'symbol_object_address':
+                    symbol_object_address,
+                    'software_control':
+                    software_control,
+                    'external_access':
+                    EXTERNAL_ACCESS.get(access, 'Unknown'),
+                    'dimensions': [dim1, dim2, dim3]
+                })
 
         except Exception as e:
             raise DataError(e)
@@ -333,7 +374,8 @@ class LogixDriver(Base):
         elif response.service_status == INSUFFICIENT_PACKETS:
             last_instance = instance + 1
         else:
-            self.__log.warning('unknown status during _parse_instance_attribute_list')
+            self.__log.warning(
+                'unknown status during _parse_instance_attribute_list')
             last_instance = -1
 
         return last_instance
@@ -358,18 +400,21 @@ class LogixDriver(Base):
 
                 new_tag = {
                     'tag_name': name,
-                    'dim': (tag['symbol_type'] & 0b0110000000000000) >> 13,  # bit 13 & 14, number of array dims
+                    'dim': (tag['symbol_type'] & 0b0110000000000000) >>
+                    13,  # bit 13 & 14, number of array dims
                     'instance_id': tag['instance_id'],
                     'symbol_address': tag['symbol_address'],
                     'symbol_object_address': tag['symbol_object_address'],
                     'software_control': tag['software_control'],
-                    'alias': False if tag['software_control'] & BASE_TAG_BIT else True,
+                    'alias':
+                    False if tag['software_control'] & BASE_TAG_BIT else True,
                     'external_access': tag['external_access'],
                     'dimensions': tag['dimensions']
                 }
 
                 if tag['symbol_type'] & 0b_1000_0000_0000_0000:  # bit 15, 1 = struct, 0 = atomic
-                    template_instance_id = tag['symbol_type'] & 0b_0000_1111_1111_1111
+                    template_instance_id = tag[
+                        'symbol_type'] & 0b_0000_1111_1111_1111
                     new_tag['tag_type'] = 'struct'
                     new_tag['template_instance_id'] = template_instance_id
                 else:
@@ -377,7 +422,8 @@ class LogixDriver(Base):
                     datatype = tag['symbol_type'] & 0b_0000_0000_1111_1111
                     new_tag['data_type'] = DATA_TYPE[datatype]
                     if datatype == DATA_TYPE['BOOL']:
-                        new_tag['bit_position'] = (tag['symbol_type'] & 0b_0000_0111_0000_0000) >> 8
+                        new_tag['bit_position'] = (
+                            tag['symbol_type'] & 0b_0000_0111_0000_0000) >> 8
 
                 user_tags.append(new_tag)
 
@@ -392,15 +438,21 @@ class LogixDriver(Base):
         if instance_id not in self._cache['id:struct']:
             if not self._target_is_connected:
                 if not self.forward_open():
-                    self.__log.warning("Target did not connected. get_tag_list will not be executed.")
-                    raise DataError("Target did not connected. get_tag_list will not be executed.")
+                    self.__log.warning(
+                        "Target did not connected. get_tag_list will not be executed."
+                    )
+                    raise DataError(
+                        "Target did not connected. get_tag_list will not be executed."
+                    )
             request = self.new_request('send_unit_data')
             request.add(
                 bytes([TAG_SERVICES_REQUEST['Get Attributes']]),
                 b'\x03',  # Request Path ( 20 6B 25 00 Instance )
                 CLASS_ID["8-bit"],  # Class id = 20 from spec 0x20
-                CLASS_CODE["Template Object"],  # Logical segment: Template Object 0x6C
-                INSTANCE_ID["16-bit"],  # Instance Segment: 16 Bit instance 0x25
+                CLASS_CODE[
+                    "Template Object"],  # Logical segment: Template Object 0x6C
+                INSTANCE_ID[
+                    "16-bit"],  # Instance Segment: 16 Bit instance 0x25
                 b'\x00',
                 pack_uint(instance_id),
                 b'\x04\x00',  # Number of attributes
@@ -412,7 +464,8 @@ class LogixDriver(Base):
 
             response = request.send()
             if not response:
-                raise DataError(f"send_unit_data returned not valid data", response.error)
+                raise DataError(f"send_unit_data returned not valid data",
+                                response.error)
             _struct = self._parse_structure_makeup_attributes(response)
             self._cache['id:struct'][instance_id] = _struct
             self._cache['handle:id'][_struct['structure_handle']] = instance_id
@@ -433,7 +486,8 @@ class LogixDriver(Base):
         try:
             if unpack_uint(attribute[idx:idx + 2]) == SUCCESS:
                 idx += 2
-                structure['object_definition_size'] = unpack_dint(attribute[idx:idx + 4])
+                structure['object_definition_size'] = unpack_dint(
+                    attribute[idx:idx + 4])
             else:
                 structure['Error'] = 'object_definition Error'
                 return structure
@@ -441,7 +495,8 @@ class LogixDriver(Base):
             idx += 6
             if unpack_uint(attribute[idx:idx + 2]) == SUCCESS:
                 idx += 2
-                structure['structure_size'] = unpack_dint(attribute[idx:idx + 4])
+                structure['structure_size'] = unpack_dint(attribute[idx:idx +
+                                                                    4])
             else:
                 structure['Error'] = 'structure Error'
                 return structure
@@ -457,7 +512,8 @@ class LogixDriver(Base):
             idx += 4
             if unpack_uint(attribute[idx:idx + 2]) == SUCCESS:
                 idx += 2
-                structure['structure_handle'] = unpack_uint(attribute[idx:idx + 2])
+                structure['structure_handle'] = unpack_uint(attribute[idx:idx +
+                                                                      2])
             else:
                 structure['Error'] = 'structure_handle Error'
                 return structure
@@ -481,16 +537,18 @@ class LogixDriver(Base):
                     bytes([TAG_SERVICES_REQUEST['Read Tag']]),
                     b'\x03',  # Request Path ( 20 6B 25 00 Instance )
                     CLASS_ID["8-bit"],  # Class id = 20 from spec
-                    CLASS_CODE["Template Object"],  # Logical segment: Template Object 0x6C
-                    INSTANCE_ID["16-bit"],  # Instance Segment: 16 Bit instance 0x25
+                    CLASS_CODE[
+                        "Template Object"],  # Logical segment: Template Object 0x6C
+                    INSTANCE_ID[
+                        "16-bit"],  # Instance Segment: 16 Bit instance 0x25
                     b'\x00',
                     pack_uint(instance_id),
                     pack_dint(offset),  # Offset
-                    pack_uint(((object_definition_size * 4) - 21) - offset)
-                )
+                    pack_uint(((object_definition_size * 4) - 21) - offset))
                 response = request.send()
 
-                if response.service_status not in (SUCCESS, INSUFFICIENT_PACKETS):
+                if response.service_status not in (SUCCESS,
+                                                   INSUFFICIENT_PACKETS):
                     raise DataError('Error reading template', response)
 
                 template_raw += response.data
@@ -508,13 +566,16 @@ class LogixDriver(Base):
     def _parse_template_data(self, data, member_count):
         info_len = member_count * TEMPLATE_MEMBER_INFO_LEN
         info_data = data[:info_len]
-        member_data = [self._parse_template_data_member_info(info)
-                       for info in (info_data[i:i + TEMPLATE_MEMBER_INFO_LEN]
-                                    for i in range(0, info_len, TEMPLATE_MEMBER_INFO_LEN))]
+        member_data = [
+            self._parse_template_data_member_info(info)
+            for info in (info_data[i:i + TEMPLATE_MEMBER_INFO_LEN]
+                         for i in range(0, info_len, TEMPLATE_MEMBER_INFO_LEN))
+        ]
         member_names = []
         template_name = None
         try:
-            for name in (x.decode(errors='replace') for x in data[info_len:].split(b'\x00') if len(x)):
+            for name in (x.decode(errors='replace')
+                         for x in data[info_len:].split(b'\x00') if len(x)):
                 if template_name is None and ';' in name:
                     template_name, _ = name.split(';', maxsplit=1)
                 else:
@@ -530,13 +591,15 @@ class LogixDriver(Base):
             template_name = 'STRING'
 
         template = {
-            'name': template_name,  # predefined types put name as first member (DWORD)
+            'name':
+            template_name,  # predefined types put name as first member (DWORD)
             'internal_tags': {},
             'attributes': []
         }
 
         for member, info in zip(member_names, member_data):
-            if not member.startswith('ZZZZZZZZZZ') and not member.startswith('__'):
+            if not member.startswith('ZZZZZZZZZZ') and not member.startswith(
+                    '__'):
                 template['attributes'].append(member)
             template['internal_tags'][member] = info
 
@@ -575,10 +638,13 @@ class LogixDriver(Base):
     def _get_data_type(self, instance_id):
         if instance_id not in self._cache['id:udt']:
             try:
-                template = self._get_structure_makeup(instance_id)  # instance id from type
+                template = self._get_structure_makeup(
+                    instance_id)  # instance id from type
                 if not template.get('Error'):
-                    _data = self._read_template(instance_id, template['object_definition_size'])
-                    data_type = self._parse_template_data(_data, template['member_count'])
+                    _data = self._read_template(
+                        instance_id, template['object_definition_size'])
+                    data_type = self._parse_template_data(
+                        _data, template['member_count'])
                     data_type['template'] = template
                     self._cache['id:udt'][instance_id] = data_type
                     self._data_types[data_type['name']] = data_type
@@ -604,7 +670,8 @@ class LogixDriver(Base):
         for tag in tags:
             try:
                 request_data = parsed_requests[tag]
-                result = read_results[(request_data['plc_tag'], request_data['elements'])]
+                result = read_results[(request_data['plc_tag'],
+                                       request_data['elements'])]
                 if request_data.get('bit') is None:
                     results.append(result)
                 else:
@@ -618,7 +685,8 @@ class LogixDriver(Base):
                     else:
                         results.append(Tag(tag, None, None, result.error))
             except Exception as err:
-                results.append(Tag(tag, None, None, f'Invalid tag request - {err}'))
+                results.append(
+                    Tag(tag, None, None, f'Invalid tag request - {err}'))
 
         if len(tags) > 1:
             return results
@@ -631,39 +699,52 @@ class LogixDriver(Base):
         current_request = self.new_request('multi_request')
         requests.append(current_request)
         tags_in_requests = set()
-        for tag, tag_data in parsed_tags.items():
-            if tag_data.get('error') is None and (tag_data['plc_tag'], tag_data['elements']) not in tags_in_requests:
-                tags_in_requests.add((tag_data['plc_tag'], tag_data['elements']))
-                return_size = _tag_return_size(tag_data['tag_info']) * tag_data['elements']
+        for tag, tag_data in list(parsed_tags.items()):
+            if tag_data.get('error') is None and (
+                    tag_data['plc_tag'],
+                    tag_data['elements']) not in tags_in_requests:
+                tags_in_requests.add(
+                    (tag_data['plc_tag'], tag_data['elements']))
+                return_size = _tag_return_size(
+                    tag_data['tag_info']) * tag_data['elements']
                 if return_size > self.connection_size:
                     _request = self.new_request('read_tag_fragmented')
-                    _request.add(tag_data['plc_tag'], tag_data['elements'], tag_data['tag_info'])
+                    _request.add(tag_data['plc_tag'], tag_data['elements'],
+                                 tag_data['tag_info'])
                     requests.append(_request)
                 else:
                     try:
                         if response_size + return_size < self.connection_size:
-                            if current_request.add_read(tag_data['plc_tag'], tag_data['elements'],
-                                                        tag_data['tag_info']):
+                            if current_request.add_read(
+                                    tag_data['plc_tag'], tag_data['elements'],
+                                    tag_data['tag_info']):
                                 response_size += return_size
                             else:
                                 response_size = return_size
-                                current_request = self.new_request('multi_request')
-                                current_request.add_read(tag_data['plc_tag'], tag_data['elements'],
-                                                         tag_data['tag_info'])
+                                current_request = self.new_request(
+                                    'multi_request')
+                                current_request.add_read(
+                                    tag_data['plc_tag'], tag_data['elements'],
+                                    tag_data['tag_info'])
                                 requests.append(current_request)
                         else:
                             response_size = return_size
                             current_request = self.new_request('multi_request')
-                            current_request.add_read(tag_data['plc_tag'], tag_data['elements'], tag_data['tag_info'])
+                            current_request.add_read(tag_data['plc_tag'],
+                                                     tag_data['elements'],
+                                                     tag_data['tag_info'])
                             requests.append(current_request)
                     except RequestError:
-                        self.__log.exception(f'Failed to build request for {tag} - skipping')
+                        self.__log.exception(
+                            f'Failed to build request for {tag} - skipping')
                         continue
 
         return requests
 
     @with_forward_open
-    def write(self, *tags_values: Sequence[Tuple[str, Union[int, float, str, bool]]]) -> Union[Tag, List[Tag]]:
+    def write(
+        self, *tags_values: Sequence[Tuple[str, Union[int, float, str, bool]]]
+    ) -> Union[Tag, List[Tag]]:
         tags = (tag for (tag, value) in tags_values)
         parsed_requests = self._parse_requested_tags(tags)
 
@@ -685,17 +766,21 @@ class LogixDriver(Base):
             try:
                 request_data = parsed_requests[tag]
                 bit = parsed_requests[tag].get('bit')
-                result = write_results[(request_data['plc_tag'], request_data['elements'])]
+                result = write_results[(request_data['plc_tag'],
+                                        request_data['elements'])]
 
                 if request_data['elements'] > 1:
-                    result = result._replace(type=f'{result.type}[{request_data["elements"]}]')
+                    result = result._replace(
+                        type=f'{result.type}[{request_data["elements"]}]')
                 if bit is not None:
                     result = result._replace(tag=tag, type='BOOL', value=value)
                 else:
-                    result = result._replace(tag=request_data['plc_tag'], value=value)
+                    result = result._replace(tag=request_data['plc_tag'],
+                                             value=value)
                 results.append(result)
             except Exception as err:
-                results.append(Tag(tag, None, None, f'Invalid tag request - {err}'))
+                results.append(
+                    Tag(tag, None, None, f'Invalid tag request - {err}'))
 
         if len(tags_values) > 1:
             return results
@@ -709,9 +794,12 @@ class LogixDriver(Base):
         bit_writes = {}
 
         tags_in_requests = set()
-        for tag, tag_data in parsed_tags.items():
-            if tag_data.get('error') is None and (tag_data['plc_tag'], tag_data['elements']) not in tags_in_requests:
-                tags_in_requests.add((tag_data['plc_tag'], tag_data['elements']))
+        for tag, tag_data in list(parsed_tags.items()):
+            if tag_data.get('error') is None and (
+                    tag_data['plc_tag'],
+                    tag_data['elements']) not in tags_in_requests:
+                tags_in_requests.add(
+                    (tag_data['plc_tag'], tag_data['elements']))
 
                 string = _make_string_bytes(tag_data)
                 if string is not None:
@@ -720,58 +808,77 @@ class LogixDriver(Base):
                 if _bit_request(tag_data, bit_writes):
                     continue
 
-                tag_data['write_value'] = writable_value(tag_data['value'], tag_data['elements'],
-                                                         tag_data['tag_info']['data_type'])
+                tag_data['write_value'] = writable_value(
+                    tag_data['value'], tag_data['elements'],
+                    tag_data['tag_info']['data_type'])
 
                 if len(tag_data['write_value']) > self.connection_size:
                     _request = self.new_request('write_tag_fragmented')
-                    _request.add(tag_data['plc_tag'], tag_data['value'], tag_data['elements'], tag_data['tag_info'])
+                    _request.add(tag_data['plc_tag'], tag_data['value'],
+                                 tag_data['elements'], tag_data['tag_info'])
                     requests.append(_request)
                     continue
 
                 try:
-                    if not current_request.add_write(tag_data['plc_tag'], tag_data['write_value'], tag_data['elements'],
-                                                     tag_data['tag_info']):
+                    if not current_request.add_write(
+                            tag_data['plc_tag'], tag_data['write_value'],
+                            tag_data['elements'], tag_data['tag_info']):
                         current_request = self.new_request('multi_request')
                         requests.append(current_request)
-                        current_request.add_write(tag_data['plc_tag'], tag_data['write_value'], tag_data['elements'],
+                        current_request.add_write(tag_data['plc_tag'],
+                                                  tag_data['write_value'],
+                                                  tag_data['elements'],
                                                   tag_data['tag_info'])
 
                 except RequestError:
-                    self.__log.exception(f'Failed to build request for {tag} - skipping')
+                    self.__log.exception(
+                        f'Failed to build request for {tag} - skipping')
                     continue
 
         if bit_writes:
             for tag in bit_writes:
                 try:
-                    value = bit_writes[tag]['or_mask'], bit_writes[tag]['and_mask']
-                    if not current_request.add_write(tag, value, tag_info=bit_writes[tag]['tag_info'], bits_write=True):
+                    value = bit_writes[tag]['or_mask'], bit_writes[tag][
+                        'and_mask']
+                    if not current_request.add_write(
+                            tag,
+                            value,
+                            tag_info=bit_writes[tag]['tag_info'],
+                            bits_write=True):
                         current_request = self.new_request('multi_request')
                         requests.append(current_request)
-                        current_request.add_write(tag, value, tag_info=bit_writes[tag]['tag_info'], bits_write=True)
+                        current_request.add_write(
+                            tag,
+                            value,
+                            tag_info=bit_writes[tag]['tag_info'],
+                            bits_write=True)
                 except RequestError:
-                    self.__log.exception(f'Failed to build request for {tag} - skipping')
+                    self.__log.exception(
+                        f'Failed to build request for {tag} - skipping')
                     continue
         return requests, bit_writes
 
     def _get_tag_info(self, base, attrs):
-
         def _recurse_attrs(attrs, data):
             cur, *remain = attrs
             if not len(remain):
                 return data[_strip_array(cur)]
             else:
-                return _recurse_attrs(remain, data[_strip_array(cur)]['data_type']['internal_tags'])
+                return _recurse_attrs(
+                    remain,
+                    data[_strip_array(cur)]['data_type']['internal_tags'])
 
         try:
             data = self._tags[_strip_array(base)]
             if not len(attrs):
                 return data
             else:
-                return _recurse_attrs(attrs, data['data_type']['internal_tags'])
+                return _recurse_attrs(attrs,
+                                      data['data_type']['internal_tags'])
 
         except Exception as err:
-            self.__log.exception(f'Failed to lookup tag data for {base}, {attrs}')
+            self.__log.exception(
+                f'Failed to lookup tag data for {base}, {attrs}')
             raise
 
     def _parse_requested_tags(self, tags):
@@ -826,7 +933,6 @@ class LogixDriver(Base):
 
     @staticmethod
     def _send_requests(requests):
-
         def _mkkey(t=None, r=None):
             if t is not None:
                 return t['tag'], t['elements']
@@ -840,25 +946,32 @@ class LogixDriver(Base):
                 response = request.send()
             except Exception as err:
                 if request.type_ != 'multi':
-                    results[_mkkey(r=request)] = Tag(request.tag, None, None, str(err))
+                    results[_mkkey(r=request)] = Tag(request.tag, None, None,
+                                                     str(err))
                 else:
                     for tag in request.tags:
-                        results[_mkkey(t=tag)] = Tag(tag['tag'], None, None, str(err))
+                        results[_mkkey(t=tag)] = Tag(tag['tag'], None, None,
+                                                     str(err))
             else:
                 if request.type_ != 'multi':
                     if response:
-                        results[_mkkey(r=request)] = Tag(request.tag,
-                                                         response.value if request.type_ == 'read' else request.value,
-                                                         response.data_type if request.type_ == 'read' else request.data_type)
+                        results[_mkkey(r=request)] = Tag(
+                            request.tag, response.value
+                            if request.type_ == 'read' else request.value,
+                            response.data_type
+                            if request.type_ == 'read' else request.data_type)
                     else:
-                        results[_mkkey(r=request)] = Tag(request.tag, None, None, response.error)
+                        results[_mkkey(r=request)] = Tag(
+                            request.tag, None, None, response.error)
                 else:
                     for tag in response.tags:
                         if tag['service_status'] == SUCCESS:
-                            results[_mkkey(t=tag)] = Tag(tag['tag'], tag['value'], tag['data_type'])
+                            results[_mkkey(t=tag)] = Tag(
+                                tag['tag'], tag['value'], tag['data_type'])
                         else:
-                            results[_mkkey(t=tag)] = Tag(tag['tag'], None, None,
-                                                         tag.get('error', 'Unknown Service Error'))
+                            results[_mkkey(t=tag)] = Tag(
+                                tag['tag'], None, None,
+                                tag.get('error', 'Unknown Service Error'))
         return results
 
     # --------------------------------------------------------------
@@ -877,16 +990,15 @@ class LogixDriver(Base):
             base, *attrs = tags
 
             if self.use_instance_ids and base in self.tags:
-                rp = [CLASS_ID['8-bit'],
-                      CLASS_CODE['Symbol Object'],
-                      INSTANCE_ID['16-bit'], b'\x00',
-                      pack_uint(self.tags[base]['instance_id'])]
+                rp = [
+                    CLASS_ID['8-bit'], CLASS_CODE['Symbol Object'],
+                    INSTANCE_ID['16-bit'], b'\x00',
+                    pack_uint(self.tags[base]['instance_id'])
+                ]
             else:
                 base_tag, index = self._find_tag_index(base)
                 base_len = len(base_tag)
-                rp = [EXTENDED_SYMBOL,
-                      pack_usint(base_len),
-                      base_tag]
+                rp = [EXTENDED_SYMBOL, pack_usint(base_len), base_tag]
                 if base_len % 2:
                     rp.append(PADDING_BYTE)
                 if index is None:
@@ -898,9 +1010,7 @@ class LogixDriver(Base):
                 attr, index = self._find_tag_index(attr)
                 tag_length = len(attr)
                 # Create the request path
-                attr_path = [EXTENDED_SYMBOL,
-                             pack_usint(tag_length),
-                             attr]
+                attr_path = [EXTENDED_SYMBOL, pack_usint(tag_length), attr]
                 # Add pad byte because total length of Request path must be word-aligned
                 if tag_length % 2:
                     attr_path.append(PADDING_BYTE)
@@ -922,8 +1032,11 @@ class LogixDriver(Base):
     def _find_tag_index(self, tag):
         if '[' in tag:  # Check if is an array tag
             t = tag[:len(tag) - 1]  # Remove the last square bracket
-            inside_value = t[t.find('[') + 1:]  # Isolate the value inside bracket
-            index = inside_value.split(',')  # Now split the inside value in case part of multidimensional array
+            inside_value = t[t.find('[') +
+                             1:]  # Isolate the value inside bracket
+            index = inside_value.split(
+                ','
+            )  # Now split the inside value in case part of multidimensional array
             tag = t[:t.find('[')]  # Get only the tag part
         else:
             index = []
@@ -971,12 +1084,13 @@ class LogixDriver(Base):
                 service = reply[46]
                 status = _unit_data_status(reply)
                 # return None
-                if status == INSUFFICIENT_PACKETS and service in (TAG_SERVICES_REPLY['Read Tag'],
-                                                                  TAG_SERVICES_REPLY['Multiple Service Packet'],
-                                                                  TAG_SERVICES_REPLY['Read Tag Fragmented'],
-                                                                  TAG_SERVICES_REPLY['Write Tag Fragmented'],
-                                                                  TAG_SERVICES_REPLY['Get Instance Attributes List'],
-                                                                  TAG_SERVICES_REPLY['Get Attributes']):
+                if status == INSUFFICIENT_PACKETS and service in (
+                        TAG_SERVICES_REPLY['Read Tag'],
+                        TAG_SERVICES_REPLY['Multiple Service Packet'],
+                        TAG_SERVICES_REPLY['Read Tag Fragmented'],
+                        TAG_SERVICES_REPLY['Write Tag Fragmented'],
+                        TAG_SERVICES_REPLY['Get Instance Attributes List'],
+                        TAG_SERVICES_REPLY['Get Attributes']):
                     return None
                 if status == SUCCESS:
                     return None
@@ -1002,8 +1116,10 @@ class LogixDriver(Base):
         """
 
         if not self.forward_open():
-            self.__log.warning("Target did not connected. read_tag will not be executed.")
-            raise DataError("Target did not connected. read_tag will not be executed.")
+            self.__log.warning(
+                "Target did not connected. read_tag will not be executed.")
+            raise DataError(
+                "Target did not connected. read_tag will not be executed.")
 
         if len(tags) == 1:
             if isinstance(tags[0], (list, tuple, GeneratorType)):
@@ -1025,47 +1141,65 @@ class LogixDriver(Base):
             if read:
                 rp = self.create_tag_rp(tag)
                 if rp is None:
-                    raise DataError(f"Cannot create tag {tag} request packet. read_tag will not be executed.")
+                    raise DataError(
+                        f"Cannot create tag {tag} request packet. read_tag will not be executed."
+                    )
                 else:
                     tag_req_len = len(rp) + MULTISERVICE_READ_OVERHEAD
                     if tag_req_len + request_len >= self.connection_size:
                         rp_list.append([])
                         tags_read.append([])
                         request_len = 0
-                    rp_list[-1].append(bytes([TAG_SERVICES_REQUEST['Read Tag']]) + rp + b'\x01\x00')
+                    rp_list[-1].append(
+                        bytes([TAG_SERVICES_REQUEST['Read Tag']]) + rp +
+                        b'\x01\x00')
                     tags_read[-1].append(tag)
                     request_len += tag_req_len
 
         replies = []
         for req_list, tags_ in zip(rp_list, tags_read):
-            message_request = self.build_multiple_service(req_list, self._get_sequence())
-            msg = self.build_common_packet_format(DATA_ITEM['Connected'], b''.join(message_request),
-                                                  ADDRESS_ITEM['Connection Based'], addr_data=self._target_cid, )
+            message_request = self.build_multiple_service(
+                req_list, self._get_sequence())
+            msg = self.build_common_packet_format(
+                DATA_ITEM['Connected'],
+                b''.join(message_request),
+                ADDRESS_ITEM['Connection Based'],
+                addr_data=self._target_cid,
+            )
             print(msg)
             success, reply = self.send_unit_data(msg)
             if not success:
-                raise DataError(f"send_unit_data returned not valid data - {reply}")
+                raise DataError(
+                    f"send_unit_data returned not valid data - {reply}")
 
-            replies += self._parse_multiple_request_read(reply, tags_, tag_bits)
+            replies += self._parse_multiple_request_read(
+                reply, tags_, tag_bits)
         return replies
 
     def _read_tag_single(self, tag):
         tag, bit = self._prep_bools(tag, 'BOOL', bits_only=True)
         rp = self.create_tag_rp(tag)
         if rp is None:
-            self.__log.warning(f"Cannot create tag {tag} request packet. read_tag will not be executed.")
+            self.__log.warning(
+                f"Cannot create tag {tag} request packet. read_tag will not be executed."
+            )
             return None
         else:
             # Creating the Message Request Packet
             message_request = [
                 pack_uint(self._get_sequence()),
-                bytes([TAG_SERVICES_REQUEST['Read Tag']]),  # the Request Service
+                bytes([TAG_SERVICES_REQUEST['Read Tag']
+                       ]),  # the Request Service
                 # bytes([len(rp) // 2]),  # the Request Path Size length in word
                 rp,  # the request path
                 b'\x01\x00',
             ]
-        request = self.build_common_packet_format(DATA_ITEM['Connected'], b''.join(message_request),
-                                                  ADDRESS_ITEM['Connection Based'], addr_data=self._target_cid, )
+        request = self.build_common_packet_format(
+            DATA_ITEM['Connected'],
+            b''.join(message_request),
+            ADDRESS_ITEM['Connection Based'],
+            addr_data=self._target_cid,
+        )
         success, reply = self.send_unit_data(request)
 
         if success:
@@ -1074,7 +1208,8 @@ class LogixDriver(Base):
             try:
                 value = UNPACK_DATA_FUNCTION[typ](reply[52:])
                 if bit is not None:
-                    value = bool(value & (1 << bit)) if bit < BITS_PER_INT_TYPE[typ] else None
+                    value = bool(value & (
+                        1 << bit)) if bit < BITS_PER_INT_TYPE[typ] else None
                 return Tag(tag, value, typ)
             except Exception as e:
                 raise DataError(e)
@@ -1105,15 +1240,20 @@ class LogixDriver(Base):
                     typ = DATA_TYPE[unpack_uint(reply[start + 4:start + 6])]
                     value_begin = start + 6
                     value_end = value_begin + DATA_FUNCTION_SIZE[typ]
-                    value = UNPACK_DATA_FUNCTION[typ](reply[value_begin:value_end])
+                    value = UNPACK_DATA_FUNCTION[typ](
+                        reply[value_begin:value_end])
                     if tag in tag_bits:
                         for bit in tag_bits[tag]:
-                            val = bool(value & (1 << bit)) if bit < BITS_PER_INT_TYPE[typ] else None
+                            val = bool(
+                                value & (1 << bit)
+                            ) if bit < BITS_PER_INT_TYPE[typ] else None
                             tag_list.append(Tag(f'{tag}.{bit}', val, 'BOOL'))
                     else:
                         tag_list.append(Tag(tag, value, typ))
                 else:
-                    tag_list.append(Tag(tag, None, None, get_service_status(general_status)))
+                    tag_list.append(
+                        Tag(tag, None, None,
+                            get_service_status(general_status)))
 
             return tag_list
         except Exception as e:
@@ -1133,8 +1273,10 @@ class LogixDriver(Base):
 
         if not self._target_is_connected:
             if not self.forward_open():
-                self.__log.warning("Target did not connected. read_tag will not be executed.")
-                raise DataError("Target did not connected. read_tag will not be executed.")
+                self.__log.warning(
+                    "Target did not connected. read_tag will not be executed.")
+                raise DataError(
+                    "Target did not connected. read_tag will not be executed.")
 
         offset = 0
         last_idx = 0
@@ -1143,27 +1285,34 @@ class LogixDriver(Base):
         while offset != -1:
             rp = self.create_tag_rp(tag)
             if rp is None:
-                self.__log.warning(f"Cannot create tag {tag} request packet. read_tag will not be executed.")
+                self.__log.warning(
+                    f"Cannot create tag {tag} request packet. read_tag will not be executed."
+                )
                 return None
             else:
                 # Creating the Message Request Packet
                 message_request = [
                     pack_uint(self._get_sequence()),
-                    bytes([TAG_SERVICES_REQUEST["Read Tag Fragmented"]]),  # the Request Service
+                    bytes([TAG_SERVICES_REQUEST["Read Tag Fragmented"]
+                           ]),  # the Request Service
                     # bytes([len(rp) // 2]),  # the Request Path Size length in word
                     rp,  # the request path
                     pack_uint(counts),
                     pack_dint(offset)
                 ]
-            msg = self.build_common_packet_format(DATA_ITEM['Connected'],
-                                                  b''.join(message_request),
-                                                  ADDRESS_ITEM['Connection Based'],
-                                                  addr_data=self._target_cid, )
+            msg = self.build_common_packet_format(
+                DATA_ITEM['Connected'],
+                b''.join(message_request),
+                ADDRESS_ITEM['Connection Based'],
+                addr_data=self._target_cid,
+            )
             success, reply = self.send_unit_data(msg)
             if not success:
-                raise DataError(f"send_unit_data returned not valid data - {reply}")
+                raise DataError(
+                    f"send_unit_data returned not valid data - {reply}")
 
-            last_idx, offset = self._parse_fragment(reply, last_idx, offset, tags, raw)
+            last_idx, offset = self._parse_fragment(reply, last_idx, offset,
+                                                    tags, raw)
 
         return tags
 
@@ -1183,9 +1332,11 @@ class LogixDriver(Base):
             try:
                 typ = DATA_TYPE[data_type]
                 if raw:
-                    value = fragment_returned[idx:idx + DATA_FUNCTION_SIZE[typ]]
+                    value = fragment_returned[idx:idx +
+                                              DATA_FUNCTION_SIZE[typ]]
                 else:
-                    value = UNPACK_DATA_FUNCTION[typ](fragment_returned[idx:idx + DATA_FUNCTION_SIZE[typ]])
+                    value = UNPACK_DATA_FUNCTION[typ](
+                        fragment_returned[idx:idx + DATA_FUNCTION_SIZE[typ]])
                 idx += DATA_FUNCTION_SIZE[typ]
             except Exception as e:
                 raise DataError(e)
@@ -1200,7 +1351,8 @@ class LogixDriver(Base):
         elif status == 0x06:
             offset += fragment_returned_length
         else:
-            self.__log.warning('{0}: {1}'.format(get_service_status(status), get_extended_status(reply, 48)))
+            self.__log.warning('{0}: {1}'.format(
+                get_service_status(status), get_extended_status(reply, 48)))
             offset = -1
 
         return last_idx, offset
@@ -1241,26 +1393,34 @@ class LogixDriver(Base):
         tags_added = [[]]
         request_len = 0
         for name, value, typ in tags:
-            name, bit = self._prep_bools(name, typ, bits_only=False)  # check if bool & if bit of int or bool array
+            name, bit = self._prep_bools(
+                name, typ,
+                bits_only=False)  # check if bool & if bit of int or bool array
             # Create the request path to wrap the tag name
             rp = self.create_tag_rp(name, multi_requests=True)
             if rp is None:
-                self.__log.warning(f"Cannot create tag {tags} req. packet. write_tag will not be executed")
+                self.__log.warning(
+                    f"Cannot create tag {tags} req. packet. write_tag will not be executed"
+                )
                 return None
             else:
                 try:
                     if bit is not None:  # then it is a boolean array
                         rp = self.create_tag_rp(name, multi_requests=True)
-                        request = bytes([TAG_SERVICES_REQUEST["Read Modify Write Tag"]]) + rp
-                        request += b''.join(self._make_write_bit_data(bit, value, bool_ary='[' in name))
+                        request = bytes([
+                            TAG_SERVICES_REQUEST["Read Modify Write Tag"]
+                        ]) + rp
+                        request += b''.join(
+                            self._make_write_bit_data(bit,
+                                                      value,
+                                                      bool_ary='[' in name))
                         if typ == 'BOOL' and name.endswith(']'):
                             name = self._dword_to_boolarray(name, bit)
                         else:
                             name = f'{name}.{bit}'
                     else:
                         request = (bytes([TAG_SERVICES_REQUEST["Write Tag"]]) +
-                                   rp +
-                                   pack_uint(DATA_TYPE[typ]) +
+                                   rp + pack_uint(DATA_TYPE[typ]) +
                                    b'\x01\x00' +
                                    PACK_DATA_FUNCTION[typ](value))
 
@@ -1272,7 +1432,9 @@ class LogixDriver(Base):
                     rp_list[-1].append(request)
                     request_len += tag_req_len
                 except (LookupError, struct.error) as e:
-                    self.__warning(f"Tag:{name} type:{typ} removed from write list. Error:{e}.")
+                    self.__warning(
+                        f"Tag:{name} type:{typ} removed from write list. Error:{e}."
+                    )
 
                     # The tag in idx position need to be removed from the rp list because has some kind of error
                 else:
@@ -1281,48 +1443,62 @@ class LogixDriver(Base):
         # Create the message request
         replies = []
         for req_list, tags_ in zip(rp_list, tags_added):
-            message_request = self.build_multiple_service(req_list, self._get_sequence())
-            msg = self.build_common_packet_format(DATA_ITEM['Connected'],
-                                                  b''.join(message_request),
-                                                  ADDRESS_ITEM['Connection Based'],
-                                                  addr_data=self._target_cid, )
+            message_request = self.build_multiple_service(
+                req_list, self._get_sequence())
+            msg = self.build_common_packet_format(
+                DATA_ITEM['Connected'],
+                b''.join(message_request),
+                ADDRESS_ITEM['Connection Based'],
+                addr_data=self._target_cid,
+            )
             success, reply = self.send_unit_data(msg)
             if success:
                 replies += self._parse_multiple_request_write(tags_, reply)
             else:
-                raise DataError(f"send_unit_data returned not valid data - {reply}")
+                raise DataError(
+                    f"send_unit_data returned not valid data - {reply}")
         return replies
 
     def _write_tag_single_write(self, tag, value, typ):
-        name, bit = self._prep_bools(tag, typ,
-                                     bits_only=False)  # check if we're writing a bit of a integer rather than a BOOL
+        name, bit = self._prep_bools(
+            tag, typ, bits_only=False
+        )  # check if we're writing a bit of a integer rather than a BOOL
 
         rp = self.create_tag_rp(name)
         if rp is None:
-            self.__log.warning(f"Cannot create tag {tag} request packet. write_tag will not be executed.")
+            self.__log.warning(
+                f"Cannot create tag {tag} request packet. write_tag will not be executed."
+            )
             return None
         else:
             # Creating the Message Request Packet
             message_request = [
                 pack_uint(self._get_sequence()),
-                bytes([TAG_SERVICES_REQUEST["Read Modify Write Tag"]
-                       if bit is not None else TAG_SERVICES_REQUEST["Write Tag"]]),
+                bytes([
+                    TAG_SERVICES_REQUEST["Read Modify Write Tag"]
+                    if bit is not None else TAG_SERVICES_REQUEST["Write Tag"]
+                ]),
                 # bytes([len(rp) // 2]),  # the Request Path Size length in word
                 rp,  # the request path
             ]
             if bit is not None:
                 try:
-                    message_request += self._make_write_bit_data(bit, value, bool_ary='[' in name)
+                    message_request += self._make_write_bit_data(
+                        bit, value, bool_ary='[' in name)
                 except Exception as err:
-                    raise DataError(f'Unable to write bit, invalid bit number {repr(err)}')
+                    raise DataError(
+                        f'Unable to write bit, invalid bit number {repr(err)}')
             else:
                 message_request += [
                     pack_uint(DATA_TYPE[typ]),  # data type
                     pack_uint(1),  # Add the number of tag to write
                     PACK_DATA_FUNCTION[typ](value)
                 ]
-            request = self.build_common_packet_format(DATA_ITEM['Connected'], b''.join(message_request),
-                                                      ADDRESS_ITEM['Connection Based'], addr_data=self._target_cid)
+            request = self.build_common_packet_format(
+                DATA_ITEM['Connected'],
+                b''.join(message_request),
+                ADDRESS_ITEM['Connection Based'],
+                addr_data=self._target_cid)
             success, reply = self.send_unit_data(request)
             return Tag(tag, value, typ, None if success else reply)
 
@@ -1341,7 +1517,11 @@ class LogixDriver(Base):
         else:
             and_mask &= ~(1 << bit)
 
-        return [pack_uint(mask_size), pack_udint(or_mask)[:mask_size], pack_udint(and_mask)[:mask_size]]
+        return [
+            pack_uint(mask_size),
+            pack_udint(or_mask)[:mask_size],
+            pack_udint(and_mask)[:mask_size]
+        ]
 
     @staticmethod
     def _parse_multiple_request_write(tags, reply):
@@ -1362,7 +1542,8 @@ class LogixDriver(Base):
                 position += 2
                 start = offset + unpack_uint(reply[position:position + 2])
                 general_status = unpack_usint(reply[start + 2:start + 3])
-                error = None if general_status == SUCCESS else get_service_status(general_status)
+                error = None if general_status == SUCCESS else get_service_status(
+                    general_status)
                 tag_list.append(Tag(*tags[index], error))
             return tag_list
         except Exception as e:
@@ -1398,8 +1579,12 @@ class LogixDriver(Base):
 
         if not self._target_is_connected:
             if not self.forward_open():
-                self.__log.warning("Target did not connected. write_tag will not be executed.")
-                raise DataError("Target did not connected. write_tag will not be executed.")
+                self.__log.warning(
+                    "Target did not connected. write_tag will not be executed."
+                )
+                raise DataError(
+                    "Target did not connected. write_tag will not be executed."
+                )
 
         if isinstance(tag, (list, tuple, GeneratorType)):
             return self._write_tag_multi_write(tag)
@@ -1426,29 +1611,38 @@ class LogixDriver(Base):
 
         if not self._target_is_connected:
             if not self.forward_open():
-                self.__log.warning("Target did not connected. write_array will not be executed.")
-                raise DataError("Target did not connected. write_array will not be executed.")
+                self.__log.warning(
+                    "Target did not connected. write_array will not be executed."
+                )
+                raise DataError(
+                    "Target did not connected. write_array will not be executed."
+                )
 
         array_of_values = b''
         byte_size = 0
         byte_offset = 0
 
         for i, value in enumerate(values):
-            array_of_values += value if raw else PACK_DATA_FUNCTION[data_type](value)
+            array_of_values += value if raw else PACK_DATA_FUNCTION[data_type](
+                value)
             byte_size += DATA_FUNCTION_SIZE[data_type]
 
             if byte_size >= 450 or i == len(values) - 1:
                 # create the message and send the fragment
                 rp = self.create_tag_rp(tag)
                 if rp is None:
-                    self.__log.warning(f"Cannot create tag {tag} request packet write_array will not be executed.")
+                    self.__log.warning(
+                        f"Cannot create tag {tag} request packet write_array will not be executed."
+                    )
                     return None
                 else:
                     # Creating the Message Request Packet
                     message_request = [
                         pack_uint(self._get_sequence()),
-                        bytes([TAG_SERVICES_REQUEST["Write Tag Fragmented"]]),  # the Request Service
-                        bytes([len(rp) // 2]),  # the Request Path Size length in word
+                        bytes([TAG_SERVICES_REQUEST["Write Tag Fragmented"]
+                               ]),  # the Request Service
+                        bytes([len(rp) // 2
+                               ]),  # the Request Path Size length in word
                         rp,  # the request path
                         pack_uint(DATA_TYPE[data_type]),  # Data type to write
                         pack_uint(len(values)),  # Number of elements to write
@@ -1466,7 +1660,8 @@ class LogixDriver(Base):
 
                 success, reply = self.send_unit_data(msg)
                 if not success:
-                    raise DataError(f"send_unit_data returned not valid data - {reply}")
+                    raise DataError(
+                        f"send_unit_data returned not valid data - {reply}")
 
                 array_of_values = b''
                 byte_size = 0
@@ -1486,7 +1681,8 @@ class LogixDriver(Base):
         for idx, val in enumerate(value):
             try:
                 unsigned = ord(val)
-                data_to_send[idx] = unsigned - 256 if unsigned > 127 else unsigned
+                data_to_send[
+                    idx] = unsigned - 256 if unsigned > 127 else unsigned
             except IndexError:
                 break
 
@@ -1510,8 +1706,9 @@ class LogixDriver(Base):
         if length:
             values = self.read_array(data_tag, length)
             if values:
-                _, values = zip(*values)
-                chars = ''.join(chr(v + 256) if v < 0 else chr(v) for v in values)
+                _, values = list(zip(*values))
+                chars = ''.join(
+                    chr(v + 256) if v < 0 else chr(v) for v in values)
                 string, *_ = chars.split('\x00', maxsplit=1)
                 return string
         return None
@@ -1523,10 +1720,12 @@ def _unit_data_status(reply):
 
 def _parse_plc_name(response):
     if response.service_status != SUCCESS:
-        raise DataError(f'get_plc_name returned status {get_service_status(response.error)}')
+        raise DataError(
+            f'get_plc_name returned status {get_service_status(response.error)}'
+        )
     try:
         name_len = unpack_uint(response.data[6:8])
-        name = response.data[8: 8 + name_len].decode()
+        name = response.data[8:8 + name_len].decode()
         return name
     except Exception as err:
         raise DataError(err)
@@ -1602,7 +1801,8 @@ def _string_to_sint_array(string, string_len):
 
     for i, s in enumerate(string):
         unsigned = ord(s)
-        sint_array[i] = pack_sint(unsigned - 256 if unsigned > 127 else unsigned)
+        sint_array[i] = pack_sint(unsigned -
+                                  256 if unsigned > 127 else unsigned)
 
     return b''.join(sint_array)
 
@@ -1618,12 +1818,14 @@ def _make_string_bytes(tag_data):
         for val in tag_data['value']:
             str_data = _string_to_sint_array(val, string_length)
             str_bytes = pack_dint(len(val)) + str_data
-            string_bytes += str_bytes + b'\x00' * (len(str_bytes) % 4)  # pad data to 4-byte boundaries
+            string_bytes += str_bytes + b'\x00' * (
+                len(str_bytes) % 4)  # pad data to 4-byte boundaries
     else:
         str_data = _string_to_sint_array(tag_data['value'], string_length)
         string_bytes = pack_dint(len(tag_data['value'])) + str_data
 
-    return string_bytes + b'\x00' * (len(string_bytes) % 4)  # pad data to 4-byte boundaries
+    return string_bytes + b'\x00' * (len(string_bytes) % 4
+                                     )  # pad data to 4-byte boundaries
 
 
 def _bit_request(tag_data, bit_requests):
@@ -1631,10 +1833,12 @@ def _bit_request(tag_data, bit_requests):
         return None
 
     if tag_data['plc_tag'] not in bit_requests:
-        bit_requests[tag_data['plc_tag']] = {'and_mask': 0xFFFFFFFF,
-                                             'or_mask': 0x00000000,
-                                             'bits': [],
-                                             'tag_info': tag_data['tag_info']}
+        bit_requests[tag_data['plc_tag']] = {
+            'and_mask': 0xFFFFFFFF,
+            'or_mask': 0x00000000,
+            'bits': [],
+            'tag_info': tag_data['tag_info']
+        }
 
     bits_ = bit_requests[tag_data['plc_tag']]
     typ_, bit = tag_data['bit']

@@ -2,6 +2,7 @@
 #
 # const.py - A set of structures and constants used to implement the Ethernet/IP protocol
 #
+# Copyright (c) 2020 Startup Code <suporte@startupcode.com.br>
 # Copyright (c) 2019 Ian Ottoway <ian@ottoway.dev>
 # Copyright (c) 2014 Agostino Ruscito <ruscito@gmail.com>
 #
@@ -29,12 +30,16 @@ from os import getpid, urandom
 from autologging import logged
 
 from . import DataError, CommError
-from .bytes_ import (pack_usint, pack_udint, pack_uint, pack_dint, unpack_uint, unpack_usint, unpack_udint,
-                     print_bytes_msg, DATA_FUNCTION_SIZE, UNPACK_DATA_FUNCTION)
-from .const import (DATA_TYPE, TAG_SERVICES_REQUEST, ENCAPSULATION_COMMAND, EXTENDED_SYMBOL,
-                    ELEMENT_ID, CLASS_CODE, PADDING_BYTE, CONNECTION_SIZE, CLASS_ID, INSTANCE_ID, FORWARD_CLOSE,
-                    FORWARD_OPEN, LARGE_FORWARD_OPEN, CONNECTION_MANAGER_INSTANCE, PRIORITY, TIMEOUT_MULTIPLIER,
-                    TIMEOUT_TICKS, TRANSPORT_CLASS, UNCONNECTED_SEND, PRODUCT_TYPES, VENDORS, STATES)
+from .bytes_ import (pack_usint, pack_udint, pack_uint, pack_dint, unpack_uint,
+                     unpack_usint, unpack_udint, print_bytes_msg,
+                     DATA_FUNCTION_SIZE, UNPACK_DATA_FUNCTION)
+from .const import (DATA_TYPE, TAG_SERVICES_REQUEST, ENCAPSULATION_COMMAND,
+                    EXTENDED_SYMBOL, ELEMENT_ID, CLASS_CODE, PADDING_BYTE,
+                    CONNECTION_SIZE, CLASS_ID, INSTANCE_ID, FORWARD_CLOSE,
+                    FORWARD_OPEN, LARGE_FORWARD_OPEN,
+                    CONNECTION_MANAGER_INSTANCE, PRIORITY, TIMEOUT_MULTIPLIER,
+                    TIMEOUT_TICKS, TRANSPORT_CLASS, UNCONNECTED_SEND,
+                    PRODUCT_TYPES, VENDORS, STATES)
 from .packets import REQUEST_MAP
 from .socket_ import Socket
 
@@ -75,7 +80,8 @@ class Base:
             'vsn': b'\x09\x10\x19\x71',
             'name': 'Base',
             'ip address': None,
-            'extended forward open': False}
+            'extended forward open': False
+        }
 
     def __len__(self):
         return len(self.attribs)
@@ -112,7 +118,8 @@ class Base:
             if not exc_type:
                 return True
             else:
-                self.__log.exception('Unhandled Client Error', exc_info=(exc_type, exc_val, exc_tb))
+                self.__log.exception('Unhandled Client Error',
+                                     exc_info=(exc_type, exc_val, exc_tb))
                 return False
 
     def __repr__(self):
@@ -167,17 +174,15 @@ class Base:
 
         self._session = 0
         request = self.new_request('register_session')
-        request.add(
-            self.attribs['protocol version'],
-            b'\x00\x00'
-        )
+        request.add(self.attribs['protocol version'], b'\x00\x00')
 
         response = request.send()
         if response:
             self._session = response.session
 
             if self._debug:
-                self.__log.debug(f"Session = {response.session} has been registered.")
+                self.__log.debug(
+                    f"Session = {response.session} has been registered.")
             return self._session
 
         self.__log.warning('Session has not been registered.')
@@ -208,20 +213,26 @@ class Base:
         init_net_params = (True << 9) | (0 << 10) | (2 << 13) | (False << 15)
         if self.attribs['extended forward open']:
             connection_size = 4002
-            net_params = pack_udint((self.connection_size & 0xFFFF) | init_net_params << 16)
+            net_params = pack_udint((self.connection_size & 0xFFFF)
+                                    | init_net_params << 16)
         else:
             connection_size = 500
-            net_params = pack_uint((self.connection_size & 0x01FF) | init_net_params)
+            net_params = pack_uint((self.connection_size & 0x01FF)
+                                   | init_net_params)
 
         if self.__direct_connections:
-            connection_params = [CONNECTION_SIZE['Direct Network'], CLASS_ID["8-bit"], CLASS_CODE["Message Router"]]
+            connection_params = [
+                CONNECTION_SIZE['Direct Network'], CLASS_ID["8-bit"],
+                CLASS_CODE["Message Router"]
+            ]
         else:
             connection_params = [
                 CONNECTION_SIZE['Backplane'],
             ]
 
         forward_open_msg = [
-            FORWARD_OPEN if not self.attribs['extended forward open'] else LARGE_FORWARD_OPEN,
+            FORWARD_OPEN if not self.attribs['extended forward open'] else
+            LARGE_FORWARD_OPEN,
             b'\x02',  # CIP Path size
             CLASS_ID["8-bit"],  # class type
             CLASS_CODE["Connection Manager"],  # Volume 1: 5-1
@@ -268,7 +279,9 @@ class Base:
         """
 
         if self._session == 0:
-            raise CommError("A session need to be registered before to call forward_close.")
+            raise CommError(
+                "A session need to be registered before to call forward_close."
+            )
         request = self.new_request('send_rr_data')
 
         forward_close_msg = [
@@ -291,13 +304,11 @@ class Base:
 
         if self.__direct_connections:
             forward_close_msg[11:2] = [
-                CONNECTION_SIZE['Direct Network'],
-                b'\x00'
+                CONNECTION_SIZE['Direct Network'], b'\x00'
             ]
         else:
             forward_close_msg[11:4] = [
-                CONNECTION_SIZE['Backplane'],
-                b'\x00',
+                CONNECTION_SIZE['Backplane'], b'\x00',
                 pack_usint(self.attribs['backplane']),
                 pack_usint(self.attribs['cpu slot'])
             ]
@@ -314,8 +325,12 @@ class Base:
     def get_module_info(self, slot):
         try:
             if not self.forward_open():
-                self.__log.warning("Target did not connected. get_plc_name will not be executed.")
-                raise DataError("Target did not connected. get_plc_name will not be executed.")
+                self.__log.warning(
+                    "Target did not connected. get_plc_name will not be executed."
+                )
+                raise DataError(
+                    "Target did not connected. get_plc_name will not be executed."
+                )
             request = self.new_request('send_rr_data')
             request.add(
                 # unnconnected send portion
@@ -345,7 +360,9 @@ class Base:
                 info = self._parse_identity_object(response.data)
                 return info
             else:
-                raise DataError(f'send_rr_data did not return valid data - {response.error}')
+                raise DataError(
+                    f'send_rr_data did not return valid data - {response.error}'
+                )
 
         except Exception as err:
             raise DataError(err)
@@ -363,7 +380,9 @@ class Base:
         tmp = 15 + product_name_len
         device_type = reply[15:tmp].decode()
 
-        state = unpack_uint(reply[tmp:tmp + 4]) if reply[tmp:] else -1  # some modules don't return a state
+        state = unpack_uint(
+            reply[tmp:tmp + 4]
+        ) if reply[tmp:] else -1  # some modules don't return a state
 
         return {
             'vendor': VENDORS.get(vendor, 'UNKNOWN'),
@@ -385,7 +404,9 @@ class Base:
         """
         try:
             if self._debug:
-                self.__log.debug(print_bytes_msg(message, '-------------- SEND --------------'))
+                self.__log.debug(
+                    print_bytes_msg(message,
+                                    '-------------- SEND --------------'))
             self._sock.send(message)
         except Exception as e:
             raise CommError(e)
@@ -401,7 +422,8 @@ class Base:
             raise CommError(e)
         else:
             if self._debug:
-                self.__log.debug(print_bytes_msg(reply, '----------- RECEIVE -----------'))
+                self.__log.debug(
+                    print_bytes_msg(reply, '----------- RECEIVE -----------'))
             return reply
 
     def open(self):
@@ -415,7 +437,8 @@ class Base:
             try:
                 if self._sock is None:
                     self._sock = Socket()
-                self._sock.connect(self.attribs['ip address'], self.attribs['port'])
+                self._sock.connect(self.attribs['ip address'],
+                                   self.attribs['port'])
                 self._connection_opened = True
                 self.attribs['cid'] = urandom(4)
                 self.attribs['vsn'] = urandom(4)
@@ -481,7 +504,8 @@ class Base:
         :param message: The message to be send to the target
         :return: the replay received from the target
         """
-        msg = self.build_header(ENCAPSULATION_COMMAND["send_unit_data"], len(message))
+        msg = self.build_header(ENCAPSULATION_COMMAND["send_unit_data"],
+                                len(message))
         msg += message
         self._send(msg)
         reply = self._receive()
@@ -566,14 +590,19 @@ class Base:
         return request_path
 
     @staticmethod
-    def build_common_packet_format(message_type, message, addr_type, addr_data=None, timeout=10):
+    def build_common_packet_format(message_type,
+                                   message,
+                                   addr_type,
+                                   addr_data=None,
+                                   timeout=10):
         """ build_common_packet_format
 
         It creates the common part for a CIP message. Check Volume 2 (page 2.22) of CIP specification  for reference
         """
         msg = pack_dint(0)  # Interface Handle: shall be 0 for CIP
         msg += pack_uint(timeout)  # timeout
-        msg += pack_uint(2)  # Item count: should be at list 2 (Address and Data)
+        msg += pack_uint(
+            2)  # Item count: should be at list 2 (Address and Data)
         msg += addr_type  # Address Item Type ID
 
         if addr_data is not None:
@@ -589,13 +618,15 @@ class Base:
     @staticmethod
     def build_multiple_service(rp_list, sequence=None):
         mr = [
-            bytes([TAG_SERVICES_REQUEST["Multiple Service Packet"]]),  # the Request Service
+            bytes([TAG_SERVICES_REQUEST["Multiple Service Packet"]
+                   ]),  # the Request Service
             pack_usint(2),  # the Request Path Size length in word
             CLASS_ID["8-bit"],
             CLASS_CODE["Message Router"],
             INSTANCE_ID["8-bit"],
             b'\x01',  # Instance 1
-            pack_uint(len(rp_list))  # Number of service contained in the request
+            pack_uint(
+                len(rp_list))  # Number of service contained in the request
         ]
         if sequence is not None:
             mr.insert(0, pack_uint(sequence))
@@ -635,18 +666,20 @@ class Base:
                     data_type = unpack_uint(message[start + 4:start + 6])
                     try:
                         value_begin = start + 6
-                        value_end = value_begin + DATA_FUNCTION_SIZE[DATA_TYPE[data_type]]
+                        value_end = value_begin + DATA_FUNCTION_SIZE[
+                            DATA_TYPE[data_type]]
                         value = message[value_begin:value_end]
-                        tag_list.append((tags[index],
-                                         UNPACK_DATA_FUNCTION[DATA_TYPE[data_type]](value),
-                                         DATA_TYPE[data_type]))
+                        tag_list.append(
+                            (tags[index],
+                             UNPACK_DATA_FUNCTION[DATA_TYPE[data_type]](value),
+                             DATA_TYPE[data_type]))
                     except LookupError:
                         tag_list.append((tags[index], None, None))
                 else:
-                    tag_list.append((tags[index] + ('GOOD',)))
+                    tag_list.append((tags[index] + ('GOOD', )))
             else:
                 if typ == "READ":
                     tag_list.append((tags[index], None, None))
                 else:
-                    tag_list.append((tags[index] + ('BAD',)))
+                    tag_list.append((tags[index] + ('BAD', )))
         return tag_list

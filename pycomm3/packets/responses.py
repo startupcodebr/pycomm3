@@ -2,6 +2,7 @@
 #
 # const.py - A set of structures and constants used to implement the Ethernet/IP protocol
 #
+# Copyright (c) 2020 Startup Code <suporte@startupcode.com.br>
 # Copyright (c) 2019 Ian Ottoway <ian@ottoway.dev>
 # Copyright (c) 2014 Agostino Ruscito <ruscito@gmail.com>
 #
@@ -31,13 +32,13 @@ from autologging import logged
 from . import Packet
 from ..bytes_ import unpack_uint, unpack_usint, unpack_dint, UNPACK_DATA_FUNCTION
 from ..const import (SUCCESS, INSUFFICIENT_PACKETS, TAG_SERVICES_REPLY,
-                     get_service_status, get_extended_status, MULTI_PACKET_SERVICES, REPLY_START, STRUCTURE_READ_REPLY,
+                     get_service_status, get_extended_status,
+                     MULTI_PACKET_SERVICES, REPLY_START, STRUCTURE_READ_REPLY,
                      DATA_TYPE, DATA_TYPE_SIZE)
 
 
 @logged
 class ResponsePacket(Packet):
-
     def __init__(self, raw_data: bytes = None, *args, **kwargs):
         super().__init__()
         self.raw = raw_data
@@ -83,7 +84,8 @@ class ResponsePacket(Packet):
                 self._error = 'No Reply From PLC'
             else:
                 self.command = self.raw[:2]
-                self.command_status = unpack_dint(self.raw[8:12])  # encapsulation status check
+                self.command_status = unpack_dint(
+                    self.raw[8:12])  # encapsulation status check
         except Exception as err:
             self._error = f'Failed to parse reply - {err}'
 
@@ -109,12 +111,10 @@ class SendUnitDataResponsePacket(ResponsePacket):
             self._error = f'Failed to parse reply - {err}'
 
     def is_valid(self):
-        valid = self.service_status == SUCCESS or (self.service_status == INSUFFICIENT_PACKETS and
-                                                   self.service in MULTI_PACKET_SERVICES)
-        return all((
-            super().is_valid(),
-            valid
-        ))
+        valid = self.service_status == SUCCESS or (
+            self.service_status == INSUFFICIENT_PACKETS
+            and self.service in MULTI_PACKET_SERVICES)
+        return all((super().is_valid(), valid))
 
     def command_extended_status(self):
         return f'{get_service_status(self.command_status)} - {get_extended_status(self.raw, 48)}'
@@ -125,7 +125,13 @@ class SendUnitDataResponsePacket(ResponsePacket):
 
 @logged
 class ReadTagServiceResponsePacket(SendUnitDataResponsePacket):
-    def __init__(self, raw_data: bytes = None, tag_info=None, elements=1, tag=None, *args,  **kwargs):
+    def __init__(self,
+                 raw_data: bytes = None,
+                 tag_info=None,
+                 elements=1,
+                 tag=None,
+                 *args,
+                 **kwargs):
         self.value = None
         self.elements = elements
         self.data_type = None
@@ -136,7 +142,8 @@ class ReadTagServiceResponsePacket(SendUnitDataResponsePacket):
     def _parse_reply(self):
         try:
             super()._parse_reply()
-            self.value, self.data_type = parse_read_reply(self.data, self.tag_info, self.elements)
+            self.value, self.data_type = parse_read_reply(
+                self.data, self.tag_info, self.elements)
         except Exception as err:
             self.__log.exception('Failed parsing reply data')
             self.value = None
@@ -151,7 +158,12 @@ class ReadTagServiceResponsePacket(SendUnitDataResponsePacket):
 
 @logged
 class ReadTagFragmentedServiceResponsePacket(SendUnitDataResponsePacket):
-    def __init__(self, raw_data: bytes = None, tag_info=None, elements=1, *args,  **kwargs):
+    def __init__(self,
+                 raw_data: bytes = None,
+                 tag_info=None,
+                 elements=1,
+                 *args,
+                 **kwargs):
         self.value = None
         self.elements = elements
         self.data_type = None
@@ -170,8 +182,8 @@ class ReadTagFragmentedServiceResponsePacket(SendUnitDataResponsePacket):
 
     def parse_bytes(self):
         try:
-            self.value, self.data_type = parse_read_reply(self._data_type + self.bytes_,
-                                                          self.tag_info, self.elements)
+            self.value, self.data_type = parse_read_reply(
+                self._data_type + self.bytes_, self.tag_info, self.elements)
         except Exception as err:
             self.__log.exception('Failed parsing reply data')
             self.value = None
@@ -190,7 +202,6 @@ class WriteTagFragmentedServiceResponsePacket(SendUnitDataResponsePacket):
 
 @logged
 class MultiServiceResponsePacket(SendUnitDataResponsePacket):
-
     def __init__(self, raw_data: bytes = None, tags=None, *args, **kwargs):
         self.tags = tags
         self.values = None
@@ -201,9 +212,12 @@ class MultiServiceResponsePacket(SendUnitDataResponsePacket):
         super()._parse_reply()
         num_replies = unpack_uint(self.data)
         offset_data = self.data[2:2 + 2 * num_replies]
-        offsets = (unpack_uint(offset_data[i:i+2]) for i in range(0, len(offset_data), 2))
+        offsets = (unpack_uint(offset_data[i:i + 2])
+                   for i in range(0, len(offset_data), 2))
         start, end = tee(offsets)  # split offsets into start/end indexes
-        next(end)   # advance end by 1 so 2nd item is the end index for the first item
+        next(
+            end
+        )  # advance end by 1 so 2nd item is the end index for the first item
         reply_data = [self.data[i:j] for i, j in zip_longest(start, end)]
         values = []
 
@@ -217,7 +231,8 @@ class MultiServiceResponsePacket(SendUnitDataResponsePacket):
 
             if service == TAG_SERVICES_REPLY['Read Tag']:
                 if service_status == SUCCESS:
-                    value, dt = parse_read_reply(data[4:], tag['tag_info'], tag['elements'])
+                    value, dt = parse_read_reply(data[4:], tag['tag_info'],
+                                                 tag['elements'])
                 else:
                     value, dt = None, None
 
@@ -230,7 +245,6 @@ class MultiServiceResponsePacket(SendUnitDataResponsePacket):
 
 @logged
 class SendRRDataResponsePacket(ResponsePacket):
-
     def __init__(self, raw_data: bytes = None, *args, **kwargs):
         super().__init__(raw_data)
 
@@ -244,10 +258,7 @@ class SendRRDataResponsePacket(ResponsePacket):
             self._error = f'Failed to parse reply - {err}'
 
     def is_valid(self):
-        return all((
-            super().is_valid(),
-            self.service_status == SUCCESS
-        ))
+        return all((super().is_valid(), self.service_status == SUCCESS))
 
     def command_extended_status(self):
         return f'{get_service_status(self.command_status)} - {get_extended_status(self.raw, 42)}'
@@ -258,7 +269,6 @@ class SendRRDataResponsePacket(ResponsePacket):
 
 @logged
 class RegisterSessionResponsePacket(ResponsePacket):
-
     def __init__(self, raw_data: bytes = None, *args, **kwargs):
         self.session = None
         super().__init__(raw_data)
@@ -271,15 +281,11 @@ class RegisterSessionResponsePacket(ResponsePacket):
             self._error = f'Failed to parse reply - {err}'
 
     def is_valid(self):
-        return all((
-            super().is_valid(),
-            self.session is not None
-        ))
+        return all((super().is_valid(), self.session is not None))
 
 
 @logged
 class UnRegisterSessionResponsePacket(ResponsePacket):
-
     def _parse_reply(self):
         ...  # nothing to parse
 
@@ -289,7 +295,6 @@ class UnRegisterSessionResponsePacket(ResponsePacket):
 
 @logged
 class ListIdentityResponsePacket(ResponsePacket):
-
     def __init__(self, raw_data: bytes = None, *args, **kwargs):
         self.identity = None
         super().__init__(raw_data)
@@ -302,10 +307,7 @@ class ListIdentityResponsePacket(ResponsePacket):
             self._error = f'Failed to parse reply - {err}'
 
     def is_valid(self):
-        return all((
-            super().is_valid(),
-            self.identity is not None
-        ))
+        return all((super().is_valid(), self.identity is not None))
 
 
 def parse_read_reply(data, data_type, elements):
@@ -314,8 +316,11 @@ def parse_read_reply(data, data_type, elements):
         size = data_type['data_type']['template']['structure_size']
         dt_name = data_type['data_type']['name']
         if elements > 1:
-            value = [parse_read_reply_struct(data[i: i + size], data_type['data_type'])
-                     for i in range(0, len(data), size)]
+            value = [
+                parse_read_reply_struct(data[i:i + size],
+                                        data_type['data_type'])
+                for i in range(0, len(data), size)
+            ]
         else:
             value = parse_read_reply_struct(data, data_type['data_type'])
     else:
@@ -327,7 +332,9 @@ def parse_read_reply(data, data_type, elements):
             data = data[2:]
             value = [func(data[i:i + size]) for i in range(0, len(data), size)]
             if datatype == 'DWORD':
-                value = list(chain.from_iterable(dword_to_bool_array(val) for val in value))
+                value = list(
+                    chain.from_iterable(
+                        dword_to_bool_array(val) for val in value))
         else:
             value = UNPACK_DATA_FUNCTION[datatype](data[2:])
             if datatype == 'DWORD':
@@ -348,7 +355,7 @@ def parse_read_reply_struct(data, data_type):
     if data_type.get('string'):
         return parse_string(data)
 
-    for tag, type_def in data_type['internal_tags'].items():
+    for tag, type_def in list(data_type['internal_tags'].items()):
         datatype = type_def['data_type']
         array = type_def.get('array')
         offset = type_def['offset']
@@ -357,9 +364,14 @@ def parse_read_reply_struct(data, data_type):
             func = UNPACK_DATA_FUNCTION[datatype]
             if array:
                 ary_data = data[offset:offset + (dt_len * array)]
-                value = [func(ary_data[i:i + dt_len]) for i in range(0, array * dt_len, dt_len)]
+                value = [
+                    func(ary_data[i:i + dt_len])
+                    for i in range(0, array * dt_len, dt_len)
+                ]
                 if datatype == 'DWORD':
-                    value = list(chain.from_iterable(dword_to_bool_array(val) for val in value))
+                    value = list(
+                        chain.from_iterable(
+                            dword_to_bool_array(val) for val in value))
             else:
                 if datatype == 'BOOL':
                     bit = type_def.get('bit', 0)
@@ -374,23 +386,32 @@ def parse_read_reply_struct(data, data_type):
             str_size = datatype.get('string') + 4
             if array:
                 array_data = data[offset:offset + (str_size * array)]
-                values[tag] = [parse_string(array_data[i:i+str_size]) for i in range(0, len(array_data), str_size)]
+                values[tag] = [
+                    parse_string(array_data[i:i + str_size])
+                    for i in range(0, len(array_data), str_size)
+                ]
             else:
                 values[tag] = parse_string(data[offset:offset + str_size])
         else:
             if array:
                 ary_data = data[offset:offset + (size * array)]
-                values[tag] = [parse_read_reply_struct(ary_data[i:i + size], datatype) for i in
-                               range(0, len(ary_data), size)]
+                values[tag] = [
+                    parse_read_reply_struct(ary_data[i:i + size], datatype)
+                    for i in range(0, len(ary_data), size)
+                ]
             else:
-                values[tag] = parse_read_reply_struct(data[offset:offset + size], datatype)
+                values[tag] = parse_read_reply_struct(
+                    data[offset:offset + size], datatype)
 
-    return {k: v for k, v in values.items() if k in data_type['attributes']}
+    return {
+        k: v
+        for k, v in list(values.items()) if k in data_type['attributes']
+    }
 
 
 def parse_string(data):
     str_len = unpack_dint(data)
-    str_data = data[4:4+str_len]
+    str_data = data[4:4 + str_len]
     string = ''.join(chr(v + 256) if v < 0 else chr(v) for v in str_data)
     return string
 
@@ -400,5 +421,3 @@ def dword_to_bool_array(dword):
     bools = [False for _ in range(32 - len(bits))] + bits
     bools.reverse()
     return bools
-
-
