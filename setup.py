@@ -19,7 +19,7 @@ setup(
     license="MIT",
     packages=find_packages(),
     python_requires='>=3.6',
-    install_requires=['autologging', 'pywin32;platform_system=="Windows"'],
+    install_requires=['Autologging', 'pywin32;platform_system=="Windows"'],
     include_package_data=True,
     classifiers=[
         'Development Status :: 5 - Production/Stable',

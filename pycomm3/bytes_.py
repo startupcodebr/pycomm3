@@ -162,47 +162,47 @@ def print_bytes_msg(msg, info=''):
 
 PACK_DATA_FUNCTION = {
     'BOOL': pack_sint,
-    'SINT': pack_sint,  # Signed 8-bit integer
-    'INT': pack_int,  # Signed 16-bit integer
-    'UINT': pack_uint,  # Unsigned 16-bit integer
-    'USINT': pack_usint,  # Unsigned Byte Integer
-    'DINT': pack_dint,  # Signed 32-bit integer
-    'REAL': pack_real,  # 32-bit floating point
+    'SINT': pack_sint,    # Signed 8-bit integer
+    'INT': pack_int,    # Signed 16-bit integer
+    'UINT': pack_uint,    # Unsigned 16-bit integer
+    'USINT': pack_usint,    # Unsigned Byte Integer
+    'DINT': pack_dint,    # Signed 32-bit integer
+    'REAL': pack_real,    # 32-bit floating point
     'LINT': pack_lint,
-    'BYTE': pack_sint,  # byte string 8-bits
-    'WORD': pack_uint,  # byte string 16-bits
-    'DWORD': pack_udint,  # byte string 32-bits
-    'LWORD': pack_ulint  # byte string 64-bits
+    'BYTE': pack_sint,    # byte string 8-bits
+    'WORD': pack_uint,    # byte string 16-bits
+    'DWORD': pack_udint,    # byte string 32-bits
+    'LWORD': pack_ulint    # byte string 64-bits
 }
 
 UNPACK_DATA_FUNCTION = {
     'BOOL': unpack_bool,
-    'SINT': unpack_sint,  # Signed 8-bit integer
-    'INT': unpack_int,  # Signed 16-bit integer
-    'UINT': unpack_uint,  # Unsigned 16-bit integer
-    'USINT': unpack_usint,  # Unsigned Byte Integer
-    'DINT': unpack_dint,  # Signed 32-bit integer
-    'REAL': unpack_real,  # 32-bit floating point,
+    'SINT': unpack_sint,    # Signed 8-bit integer
+    'INT': unpack_int,    # Signed 16-bit integer
+    'UINT': unpack_uint,    # Unsigned 16-bit integer
+    'USINT': unpack_usint,    # Unsigned Byte Integer
+    'DINT': unpack_dint,    # Signed 32-bit integer
+    'REAL': unpack_real,    # 32-bit floating point,
     'LINT': unpack_lint,
-    'BYTE': unpack_sint,  # byte string 8-bits
-    'WORD': unpack_uint,  # byte string 16-bits
-    'DWORD': unpack_udint,  # byte string 32-bits
-    'LWORD': unpack_ulint  # byte string 64-bits
+    'BYTE': unpack_sint,    # byte string 8-bits
+    'WORD': unpack_uint,    # byte string 16-bits
+    'DWORD': unpack_udint,    # byte string 32-bits
+    'LWORD': unpack_ulint    # byte string 64-bits
 }
 
 DATA_FUNCTION_SIZE = {
     'BOOL': 1,
-    'SINT': 1,  # Signed 8-bit integer
-    'USINT': 1,  # Unisgned 8-bit integer
-    'INT': 2,  # Signed 16-bit integer
-    'UINT': 2,  # Unsigned 16-bit integer
-    'DINT': 4,  # Signed 32-bit integer
-    'REAL': 4,  # 32-bit floating point
+    'SINT': 1,    # Signed 8-bit integer
+    'USINT': 1,    # Unisgned 8-bit integer
+    'INT': 2,    # Signed 16-bit integer
+    'UINT': 2,    # Unsigned 16-bit integer
+    'DINT': 4,    # Signed 32-bit integer
+    'REAL': 4,    # 32-bit floating point
     'LINT': 8,
-    'BYTE': 1,  # byte string 8-bits
-    'WORD': 2,  # byte string 16-bits
-    'DWORD': 4,  # byte string 32-bits
-    'LWORD': 8  # byte string 64-bits
+    'BYTE': 1,    # byte string 8-bits
+    'WORD': 2,    # byte string 16-bits
+    'DWORD': 4,    # byte string 32-bits
+    'LWORD': 8    # byte string 64-bits
 }
 
 UNPACK_PCCC_DATA_FUNCTION = {

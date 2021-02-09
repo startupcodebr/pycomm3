@@ -1,0 +1,28 @@
+{
+    "python.formatting.provider": "yapf",
+    "python.linting.pycodestyleEnabled": true,
+    "python.linting.pylintEnabled": true,
+    "editor.formatOnSave": true,
+    "editor.formatOnPaste": false,
+    "editor.fontLigatures": true,
+    "editor.cursorStyle": "block",
+    "editor.cursorBlinking": "smooth",
+    "editor.acceptSuggestionOnEnter": "off",
+    "workbench.editor.highlightModifiedTabs": true,
+    "python.testing.unittestEnabled": false,
+    "python.testing.nosetestsEnabled": false,
+    "python.testing.pytestEnabled": false,
+    "python.pythonPath": ".venv/bin/python",
+    "editor.autoSave": "on",
+    "python.testing.unittestArgs": [
+        "-v",
+        "-s",
+        ".",
+        "-p",
+        "*test*.py"
+    ],
+    "python.testing.promptToConfigure": false,
+    "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": true
+      }    
+}
